@@ -28,9 +28,9 @@ func TestBuiltinCatalogIsValid(t *testing.T) {
 
 func TestParseRejectsBadEntries(t *testing.T) {
 	bad := []string{
-		`{"version":1,"entries":[{"id":"x","app":"a","risk":"maybe","paths":["p"],"clean":{"manual":"m"}}]}`,
-		`{"version":1,"entries":[{"id":"x","app":"a","risk":"safe","paths":["p"],"clean":{}}]}`,
-		`{"version":1,"entries":[{"id":"x","app":"a","risk":"safe","paths":["p"],"clean":{"manual":"m"},"typo":1}]}`,
+		`{"version":1,"entries":[{"id":"x","group":"dev","app":"a","risk":"maybe","paths":["p"],"clean":{"manual":"m"}}]}`,
+		`{"version":1,"entries":[{"id":"x","group":"dev","app":"a","risk":"safe","paths":["p"],"clean":{}}]}`,
+		`{"version":1,"entries":[{"id":"x","group":"dev","app":"a","risk":"safe","paths":["p"],"clean":{"manual":"m"},"typo":1}]}`,
 	}
 	for _, doc := range bad {
 		if _, err := Parse([]byte(doc)); err == nil {

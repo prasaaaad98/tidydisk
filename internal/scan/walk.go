@@ -8,14 +8,16 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
 
 // Options tunes the folder walker.
 type Options struct {
-	Workers    int   // folders read at the same time; 0 = 4 x CPU count
-	BigFileMin int64 // files at least this big are listed in Result.BigFiles; 0 = none
+	Workers    int           // folders read at the same time; 0 = 4 x CPU count
+	BigFileMin int64         // files at least this big are listed in Result.BigFiles; 0 = none
+	Progress   *atomic.Int64 // if set, counts files and folders as they are found
 }
 
 // Walk measures root by listing folders in parallel through the normal
@@ -95,6 +97,9 @@ func (w *walker) visit(id int32, path string, depth int32) {
 		}
 	}
 	<-w.sem
+	if w.opt.Progress != nil {
+		w.opt.Progress.Add(files + int64(len(subdirs)))
+	}
 
 	w.mu.Lock()
 	r := w.res

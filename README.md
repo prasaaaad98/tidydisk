@@ -3,13 +3,32 @@
 See what is filling a Windows drive and which parts are safe to clean.
 This version **only reports**. It never deletes anything.
 
+## Desktop app
+
+`tidydisk-gui.exe` is a small window over the same engine: pick a drive, press **Analyze**, filter
+by audience (Dev, Games, Browsers, Windows), and expand a row to see how to clean it, what to close
+first and what happens afterwards. It shows the folder in Explorer and copies the cleanup command.
+It offers to restart as administrator to use the fast file table scan.
+
+It uses the WebView2 runtime that ships with Windows 11 (through the pure-Go
+`github.com/jchv/go-webview2`), so there is no C compiler, Node or Electron involved. The whole UI is
+one file, `cmd/tidydisk-gui/ui.html`. Opened in a normal browser, it runs on sample data for design work.
+
+```
+go build -ldflags "-H windowsgui -s -w" -o tidydisk-gui.exe ./cmd/tidydisk-gui
+```
+
+Set `TIDYDISK_DEBUG=1` to enable right-click and DevTools in the window.
+
+## Command line
+
 ```
 tidydisk scan    [PATH]   biggest folders and files (default C:\)
 tidydisk report           known caches on this PC + big unknown folders (dry run)
 tidydisk compare [PATH]   run both scan engines and show where they differ
 ```
 
-Add `--json` to `scan` or `report` for machine-readable output (for a future GUI).
+Add `--json` to `scan` or `report` for machine-readable output.
 
 ## Two scan engines
 
@@ -64,12 +83,12 @@ go test ./...
 go build -o tidydisk.exe ./cmd/tidydisk
 ```
 
-Go 1.23+, Windows only, no third-party dependencies.
+Go 1.23+, Windows only. The command-line tool uses only the standard library and `golang.org/x/sys`;
+the desktop app adds `github.com/jchv/go-webview2`.
 
 ## Next steps
 
 - `clean` command: Recycle Bin by default, permanent only when asked, skip locked and
   recently changed files, refuse while `closeFirst` processes run, write a log.
 - Run the tool's own `clean.command` instead of deleting files where one exists.
-- GUI (Wails or a small WinUI front end) on top of `--json`.
 - Sign releases (SignPath offers free signing for open-source projects) to avoid SmartScreen warnings.

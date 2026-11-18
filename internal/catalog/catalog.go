@@ -45,6 +45,7 @@ func (c Clean) Describe() string {
 // Entry is one known space user.
 type Entry struct {
 	ID          string   `json:"id"`
+	Group       string   `json:"group"` // who cares about it: dev, games, browsers, windows, other
 	App         string   `json:"app"`
 	Category    string   `json:"category"`
 	Risk        string   `json:"risk"`
@@ -62,10 +63,25 @@ type Entry struct {
 
 var detectors = map[string]bool{"vscode-obsolete": true}
 
+// Groups are the audiences an entry belongs to, used for filtering.
+var Groups = []string{"dev", "games", "browsers", "windows", "other"}
+
+func validGroup(g string) bool {
+	for _, x := range Groups {
+		if g == x {
+			return true
+		}
+	}
+	return false
+}
+
 // Validate checks one entry.
 func (e Entry) Validate() error {
 	if e.ID == "" || e.App == "" {
 		return fmt.Errorf("entry %q: id and app are required", e.ID)
+	}
+	if !validGroup(e.Group) {
+		return fmt.Errorf("entry %q: group must be one of %v", e.ID, Groups)
 	}
 	if e.Risk != RiskSafe && e.Risk != RiskReview && e.Risk != RiskSystem {
 		return fmt.Errorf("entry %q: risk must be safe, review or system", e.ID)

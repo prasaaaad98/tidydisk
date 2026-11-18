@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -21,6 +22,17 @@ var ErrNeedsAdmin = errors.New("reading the file table needs an administrator te
 // Options tunes the file table scan.
 type Options struct {
 	BigFileMin int64
+	Progress   *atomic.Int64 // if set, counts file records as they are read
+}
+
+// CanRead reports whether this process may read the raw volume (admin).
+func CanRead(vol string) bool {
+	f, err := openVolume(strings.ToUpper(vol))
+	if err != nil {
+		return false
+	}
+	f.Close()
+	return true
 }
 
 // Scan reads the whole file table of the volume that holds path and returns a
@@ -90,9 +102,13 @@ func Scan(path string, opt Options) (*scan.Result, error) {
 			if _, err := f.ReadAt(buf[:n], pos+done); err != nil && !errors.Is(err, io.EOF) {
 				return nil, fmt.Errorf("reading file table: %w", err)
 			}
+			before := recNo
 			for o := int64(0); o+rs <= n && recNo < nRecords; o += rs {
 				t.add(recNo, buf[o:o+rs])
 				recNo++
+			}
+			if opt.Progress != nil {
+				opt.Progress.Add(recNo - before)
 			}
 			done += n
 		}

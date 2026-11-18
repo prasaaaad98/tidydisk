@@ -69,3 +69,20 @@ func TestRelated(t *testing.T) {
 		t.Fatal("related() is wrong")
 	}
 }
+
+func TestIsUnder(t *testing.T) {
+	cases := []struct {
+		p, root string
+		want    bool
+	}{
+		{`C:\Users\me`, `C:\`, true},
+		{`c:\users`, `C:\Users`, true},
+		{`D:\npm-cache`, `C:\`, false},
+		{`C:\Users2`, `C:\Users`, false},
+	}
+	for _, c := range cases {
+		if got := IsUnder(c.p, c.root); got != c.want {
+			t.Errorf("IsUnder(%q, %q) = %v", c.p, c.root, got)
+		}
+	}
+}

@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -15,8 +14,8 @@ import (
 	"text/tabwriter"
 
 	"tidydisk/internal/catalog"
+	"tidydisk/internal/engine"
 	"tidydisk/internal/human"
-	"tidydisk/internal/mft"
 	"tidydisk/internal/report"
 	"tidydisk/internal/scan"
 )
@@ -85,33 +84,11 @@ func absPath(p string) string {
 }
 
 // runEngine scans path and returns the result plus the index of path in it.
-func runEngine(engine, path string, bigMin int64) (*scan.Result, int32, error) {
-	switch engine {
-	case "walk":
-		r, err := scan.Walk(path, scan.Options{BigFileMin: bigMin})
-		return r, 0, err
-	case "mft":
-		r, err := mft.Scan(path, mft.Options{BigFileMin: bigMin})
-		if err != nil {
-			return nil, 0, err
-		}
-		i, ok := r.Find(path)
-		if !ok {
-			return nil, 0, fmt.Errorf("%s was not found in the file table", path)
-		}
-		return r, i, nil
-	case "auto":
-		r, i, err := runEngine("mft", path, bigMin)
-		if err == nil {
-			return r, i, nil
-		}
-		if errors.Is(err, mft.ErrNeedsAdmin) || errors.Is(err, mft.ErrNotNTFS) {
-			fmt.Fprintf(os.Stderr, "note: %v; using the folder walk instead\n", err)
-			return runEngine("walk", path, bigMin)
-		}
-		return nil, 0, err
-	}
-	return nil, 0, fmt.Errorf("unknown engine %q (use walk, mft or auto)", engine)
+func runEngine(name, path string, bigMin int64) (*scan.Result, int32, error) {
+	return engine.Run(name, path, engine.Options{
+		BigFileMin: bigMin,
+		OnFallback: func(err error) { fmt.Fprintf(os.Stderr, "note: %v; using the folder walk instead\n", err) },
+	})
 }
 
 func pct(part, whole int64) string {

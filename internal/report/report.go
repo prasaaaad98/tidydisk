@@ -20,6 +20,7 @@ import (
 // Finding is one catalog match on this PC.
 type Finding struct {
 	ID         string   `json:"id"`
+	Group      string   `json:"group"`
 	App        string   `json:"app"`
 	Category   string   `json:"category"`
 	Risk       string   `json:"risk"`
@@ -37,6 +38,11 @@ type Finding struct {
 // Options for Collect.
 type Options struct {
 	RunResolvers bool // ask tools (npm, pip, go...) where their cache really is
+	// Tree, if set, is a finished scan; folders inside it are measured from it
+	// instead of being walked again.
+	Tree *scan.Result
+	// Under, if set (e.g. "C:\\"), drops findings outside that folder or drive.
+	Under string
 }
 
 // Collect finds and measures every catalog entry present on this PC.
@@ -48,8 +54,11 @@ func Collect(entries []catalog.Entry, opt Options) []Finding {
 			active = resolveActive(e)
 		}
 		for _, p := range candidatePaths(e, active) {
+			if opt.Under != "" && !IsUnder(p, opt.Under) {
+				continue
+			}
 			if e.Detector == "vscode-obsolete" {
-				out = append(out, obsoleteExtensions(e, p)...)
+				out = append(out, obsoleteExtensions(e, p, opt)...)
 				continue
 			}
 			f := newFinding(e, p)
@@ -62,7 +71,7 @@ func Collect(entries []catalog.Entry, opt Options) []Finding {
 			}
 			if !e.SkipMeasure {
 				var err error
-				f.Bytes, err = measure(p)
+				f.Bytes, err = opt.measure(p)
 				f.Measured = err == nil
 				if err != nil {
 					f.Status = joinStatus(f.Status, "could not read (try an admin terminal)")
@@ -76,7 +85,7 @@ func Collect(entries []catalog.Entry, opt Options) []Finding {
 
 func newFinding(e catalog.Entry, p string) Finding {
 	return Finding{
-		ID: e.ID, App: e.App, Category: e.Category, Risk: e.Risk, Path: p,
+		ID: e.ID, Group: e.Group, App: e.App, Category: e.Category, Risk: e.Risk, Path: p,
 		Clean: e.Clean.Describe(), CloseFirst: e.CloseFirst, Admin: e.Admin,
 		Rebuilds: e.Rebuilds, Notes: e.Notes,
 	}
@@ -140,7 +149,12 @@ func related(a, b string) bool {
 
 var errNoAccess = errors.New("no access")
 
-func measure(p string) (int64, error) {
+func (opt Options) measure(p string) (int64, error) {
+	if opt.Tree != nil {
+		if i, ok := opt.Tree.Find(p); ok {
+			return opt.Tree.Dirs[i].TotalBytes, nil
+		}
+	}
 	st, err := os.Lstat(p)
 	if err != nil {
 		return 0, err
@@ -160,7 +174,7 @@ func measure(p string) (int64, error) {
 
 // obsoleteExtensions reads the .obsolete file VS Code (and its forks) keep
 // in the extensions folder: versions listed there are waiting to be removed.
-func obsoleteExtensions(e catalog.Entry, dir string) []Finding {
+func obsoleteExtensions(e catalog.Entry, dir string, opt Options) []Finding {
 	b, err := os.ReadFile(filepath.Join(dir, ".obsolete"))
 	if err != nil {
 		return nil
@@ -184,9 +198,17 @@ func obsoleteExtensions(e catalog.Entry, dir string) []Finding {
 		}
 		f := newFinding(e, p)
 		f.Status = "old version, marked for removal by the editor"
-		f.Bytes, err = measure(p)
+		f.Bytes, err = opt.measure(p)
 		f.Measured = err == nil
 		out = append(out, f)
 	}
 	return out
+}
+
+// IsUnder reports whether p is root itself or inside it. Works for drive
+// roots like `C:\` too.
+func IsUnder(p, root string) bool {
+	lp := strings.ToLower(filepath.Clean(p))
+	lr := strings.TrimRight(strings.ToLower(filepath.Clean(root)), `\`)
+	return lp == lr || strings.HasPrefix(lp, lr+`\`)
 }

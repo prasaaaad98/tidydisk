@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tidydisk</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --text: #14171c; --muted: #5d6673; --faint: #8a93a0;
+    --line: #e4e7ec; --hover: #f0f2f5; --accent: #0f9f8f; --accent-soft: #d8f3ef;
+    --warn: #b45309; --warn-soft: #fdf0dc; --used: #c9ced6; --focus: #0f9f8f66;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101216; --surface: #171a20; --text: #e8eaee; --muted: #9aa3b0; --faint: #6c7480;
+      --line: #262a32; --hover: #1d2128; --accent: #2cc4b0; --accent-soft: #15302d;
+      --warn: #f0a650; --warn-soft: #33270f; --used: #3a404a; --focus: #2cc4b066;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    display: flex; flex-direction: column; user-select: none;
+  }
+  button, select { font: inherit; color: inherit; }
+  button:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--surface);
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; letter-spacing: .2px; }
+  .brand svg { width: 20px; height: 20px; color: var(--accent); }
+  .controls { display: flex; gap: 8px; }
+  select {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-width: 150px;
+  }
+  .btn {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 14px; cursor: pointer;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn:disabled { opacity: .55; cursor: default; filter: none; }
+  .btn.small { padding: 3px 10px; font-size: 12.5px; }
+
+  main { flex: 1; overflow-y: auto; padding: 24px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  .drive { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; }
+  .free { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .free .big { font-size: 30px; font-weight: 600; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+  .free .of { color: var(--muted); }
+  .meter { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--hover); margin: 14px 0 10px; }
+  .meter .used { background: var(--used); }
+  .meter .reclaim { background: var(--accent); }
+  .legend { display: flex; gap: 16px; color: var(--muted); font-size: 12.5px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+  .mode { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+  .mode a { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .mode a:hover { text-decoration: underline; }
+
+  .progress { margin: 22px 0 0; }
+  .progress .track { height: 3px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .progress .run { width: 30%; height: 100%; background: var(--accent); border-radius: 99px; animation: slide 1.1s ease-in-out infinite; }
+  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+  .progress p { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+
+  .intro { color: var(--muted); margin: 28px 4px 0; max-width: 620px; }
+  .intro strong { color: var(--text); font-weight: 600; }
+  .error { margin-top: 18px; padding: 10px 14px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); }
+
+  .chips { display: flex; gap: 6px; margin: 26px 0 6px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 3px 12px;
+    font-size: 12.5px; cursor: pointer; color: var(--muted);
+  }
+  .chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .chip .n { opacity: .65; margin-left: 4px; }
+
+  section.group { margin-top: 22px; }
+  .ghead { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px 8px; }
+  .ghead h2 { margin: 0; font-size: 13px; font-weight: 600; }
+  .ghead .sub { color: var(--muted); font-weight: 400; margin-left: 8px; font-size: 12.5px; }
+  .ghead .total { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .list { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+
+  .row + .row { border-top: 1px solid var(--line); }
+  .rowhead {
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center;
+    width: 100%; text-align: left; background: none; border: 0; padding: 11px 16px 12px; cursor: pointer; position: relative;
+  }
+  .rowhead:hover { background: var(--hover); }
+  .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .app { font-weight: 600; white-space: nowrap; }
+  .cat { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { font-size: 11px; padding: 0 7px; border-radius: 99px; background: var(--warn-soft); color: var(--warn); white-space: nowrap; }
+  .tag.ok { background: var(--accent-soft); color: var(--accent); }
+  .size { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; grid-row: span 2; }
+  .size.na { color: var(--faint); font-weight: 400; }
+  .path {
+    color: var(--faint); font: 12px/1.4 "Cascadia Mono", Consolas, monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; text-align: left; min-width: 0;
+  }
+  .bar { position: absolute; left: 16px; bottom: 0; height: 2px; background: var(--accent); opacity: .35; border-radius: 2px; }
+
+  .detail { display: none; padding: 2px 16px 14px; }
+  .row.open .detail { display: block; }
+  .row.open .rowhead { background: var(--hover); }
+  dl { margin: 8px 0 12px; display: grid; grid-template-columns: 110px 1fr; gap: 4px 12px; font-size: 13px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; user-select: text; }
+  dd code { font: 12px "Cascadia Mono", Consolas, monospace; background: var(--hover); padding: 1px 6px; border-radius: 4px; }
+  .actions { display: flex; gap: 8px; }
+
+  footer { padding: 10px 24px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12px; display: flex; justify-content: space-between; background: var(--surface); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
+    </svg>
+    tidydisk
+  </div>
+  <div class="controls">
+    <select id="drive" aria-label="Drive"></select>
+    <button id="go" class="btn primary">Analyze</button>
+  </div>
+</header>
+
+<main><div class="wrap">
+  <section class="drive" aria-live="polite">
+    <div class="free"><span class="big" id="freeBig">—</span><span class="of" id="freeOf"></span></div>
+    <div class="meter" aria-hidden="true"><div class="used" id="mUsed"></div><div class="reclaim" id="mReclaim"></div></div>
+    <div class="legend">
+      <span><i style="background:var(--used)"></i>Used</span>
+      <span id="lgReclaim" hidden><i style="background:var(--accent)"></i><span id="lgReclaimText"></span></span>
+      <span><i style="background:var(--hover);outline:1px solid var(--line)"></i>Free</span>
+    </div>
+    <div class="mode" id="mode"></div>
+  </section>
+
+  <div class="progress" id="progress" hidden>
+    <div class="track"><div class="run"></div></div>
+    <p id="progressText">Starting…</p>
+  </div>
+  <div class="error" id="error" hidden></div>
+
+  <p class="intro" id="intro">
+    <strong>See what's filling your drive and what's safe to clear.</strong>
+    tidydisk knows the caches developers and gamers pile up: package managers, editors, build tools,
+    shader caches, game launchers and crash reports. It shows how to clear each one properly.
+    Nothing is deleted.
+  </p>
+
+  <nav class="chips" id="chips" hidden aria-label="Filter"></nav>
+  <div id="results"></div>
+</div></main>
+
+<footer><span>Dry run: tidydisk doesn't delete anything yet.</span><span id="ver"></span></footer>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  function bytes(n) {
+    if (n < 1024) return n + " B";
+    const u = ["KB", "MB", "GB", "TB"]; let i = -1;
+    do { n /= 1024; i++; } while (n >= 1024 && i < u.length - 1);
+    return (n >= 100 ? n.toFixed(0) : n.toFixed(1)) + " " + u[i];
+  }
+  const num = (n) => n.toLocaleString();
+
+  const GROUP_LABEL = { all: "All", dev: "Dev", games: "Games", browsers: "Browsers", windows: "Windows", other: "Other" };
+  const RISKS = [
+    { key: "safe", title: "Safe to clean", sub: "rebuilt automatically" },
+    { key: "review", title: "Review first", sub: "probably fine, your call" },
+    { key: "system", title: "Windows-managed", sub: "admin, use Windows' own tools" },
+  ];
+
+  // ---- backend (real in the app, mocked in a plain browser for design work) ----
+  const api = window.tdInfo ? {
+    info: () => window.tdInfo(),
+    analyze: (d) => window.tdAnalyze(d),
+    reveal: (p) => window.tdReveal(p),
+    relaunchAdmin: () => window.tdRelaunchAdmin(),
+  } : mockApi();
+
+  let state = { info: null, result: null, filter: "all", busy: false };
+
+  window.tidy = {
+    on(kind, data) {
+      if (kind === "progress") {
+        $("progressText").textContent = data.phase + (data.files ? " · " + num(data.files) + " found" : "") + "…";
+      } else if (kind === "result") {
+        state.busy = false; state.result = data; render();
+      } else if (kind === "error") {
+        state.busy = false; render(); showError(data);
+      }
+    },
+  };
+
+  function showError(msg) { const e = $("error"); e.textContent = msg; e.hidden = !msg; }
+
+  async function init() {
+    state.info = await api.info();
+    $("ver").textContent = "v" + state.info.version;
+    const sel = $("drive");
+    for (const d of state.info.drives) {
+      const sys = d.system && !/windows/i.test(d.label || "") ? " (Windows)" : "";
+      const o = el("option", null, d.root.slice(0, 2) + (d.label ? " " + d.label : "") + sys);
+      o.value = d.root; if (d.system) o.selected = true; sel.append(o);
+    }
+    sel.onchange = () => { state.result = null; render(); };
+    $("go").onclick = analyze;
+    render();
+  }
+
+  async function analyze() {
+    showError("");
+    state.busy = true; state.result = null; render();
+    $("progressText").textContent = "Starting…";
+    try { await api.analyze($("drive").value); }
+    catch (e) { state.busy = false; render(); showError(String(e)); }
+  }
+
+  function currentDrive() {
+    const root = $("drive").value;
+    if (state.result && state.result.drive.root === root) return state.result.drive;
+    return state.info.drives.find((d) => d.root === root);
+  }
+
+  function render() {
+    const d = currentDrive();
+    $("go").disabled = state.busy || !d;
+    $("go").textContent = state.busy ? "Analyzing…" : state.result ? "Analyze again" : "Analyze";
+    $("drive").disabled = state.busy;
+    $("progress").hidden = !state.busy;
+    $("intro").hidden = !!state.result || state.busy;
+
+    // drive card
+    if (d) {
+      $("freeBig").textContent = bytes(d.free) + " free";
+      $("freeOf").textContent = "of " + bytes(d.total) + (d.fileSystem ? " · " + d.fileSystem : "");
+      const safe = state.result ? sum(state.result.findings.filter((f) => f.risk === "safe")) : 0;
+      const used = d.total - d.free;
+      $("mUsed").style.width = ((used - safe) / d.total * 100) + "%";
+      $("mReclaim").style.width = (safe / d.total * 100) + "%";
+      $("lgReclaim").hidden = !safe;
+      $("lgReclaimText").textContent = "Safe to clean · " + bytes(safe);
+    }
+    renderMode();
+    renderResults();
+  }
+
+  function renderMode() {
+    const m = $("mode"); m.textContent = "";
+    const r = state.result;
+    if (r) {
+      m.append((r.engine === "mft" ? "Fast scan (file table)" : "Standard scan") +
+        " · " + num(r.scannedFiles) + " files, " + bytes(r.scannedBytes) + " in " + (r.elapsedMs / 1000).toFixed(1) + " s");
+    } else {
+      m.append(state.info.elevated ? "Fast scan available (running as administrator)" : "Standard scan, about 20 s for a full drive");
+    }
+    if (!state.info.elevated) {
+      m.append(" · ");
+      const a = el("a", null, "Restart as administrator for the fast scan");
+      a.tabIndex = 0;
+      a.onclick = async () => { try { await api.relaunchAdmin(); } catch (e) { showError(String(e)); } };
+      m.append(a);
+    }
+  }
+
+  const sum = (list) => list.reduce((s, f) => s + (f.measured ? f.bytes : 0), 0);
+
+  function renderResults() {
+    const out = $("results"); out.textContent = "";
+    const chips = $("chips"); chips.textContent = "";
+    const r = state.result;
+    chips.hidden = !r;
+    if (!r) return;
+
+    const findings = r.findings.filter((f) => f.measured ? f.bytes > 0 : true);
+    const counts = { all: findings.length };
+    for (const f of findings) counts[f.group] = (counts[f.group] || 0) + 1;
+    for (const g of ["all"].concat(state.info.groups)) {
+      if (!counts[g]) continue;
+      const c = el("button", "chip", GROUP_LABEL[g] || g);
+      c.append(el("span", "n", String(counts[g])));
+      c.setAttribute("aria-pressed", String(state.filter === g));
+      c.onclick = () => { state.filter = g; renderResults(); };
+      chips.append(c);
+    }
+
+    const shown = findings.filter((f) => state.filter === "all" || f.group === state.filter);
+    for (const risk of RISKS) {
+      const list = shown.filter((f) => f.risk === risk.key).sort((a, b) => b.bytes - a.bytes);
+      if (!list.length) continue;
+      out.append(groupSection(risk.title, risk.sub, sum(list), list.map(findingRow)));
+    }
+
+    if (state.filter === "all" && (r.unknown.length || r.files.length)) {
+      const rows = r.unknown.map((h) => ["Folder", h.path, h.bytes])
+        .concat(r.files.map((f) => ["File", f.path, f.size]))
+        .sort((a, b) => b[2] - a[2])
+        .map((x) => plainRow(...x));
+      out.append(groupSection("Not in the catalog", "big, but tidydisk doesn't know what they are", null, rows));
+    }
+    if (!out.children.length) out.append(el("p", "intro", "Nothing to show for this filter."));
+    sizeBars();
+  }
+
+  function groupSection(title, sub, total, rows) {
+    const s = el("section", "group");
+    const h = el("div", "ghead");
+    const h2 = el("h2", null, title); h2.append(el("span", "sub", sub));
+    h.append(h2);
+    if (total != null) h.append(el("span", "total", bytes(total)));
+    const list = el("div", "list"); list.append(...rows);
+    s.append(h, list);
+    return s;
+  }
+
+  function tagFor(f) {
+    const s = f.status || "";
+    if (s.startsWith("leftover")) return ["leftover", ""];
+    if (s.startsWith("old version")) return ["old version", ""];
+    if (s.includes("could not read")) return ["needs admin", ""];
+    return null;
+  }
+
+  function rowShell(appText, catText, path, size, measured) {
+    const row = el("div", "row");
+    const head = el("button", "rowhead");
+    head.setAttribute("aria-expanded", "false");
+    const who = el("div", "who");
+    who.append(el("span", "app", appText));
+    if (catText) who.append(el("span", "cat", catText));
+    const sz = el("div", "size" + (measured ? "" : " na"), measured ? bytes(size) : "not measured");
+    const p = el("div", "path"); p.append(el("bdi", null, path)); p.title = path;
+    const bar = el("div", "bar"); bar.dataset.size = measured ? size : 0;
+    head.append(who, sz, p, bar);
+    head.onclick = () => { const open = row.classList.toggle("open"); head.setAttribute("aria-expanded", String(open)); };
+    row.append(head);
+    return { row, who };
+  }
+
+  function findingRow(f) {
+    const { row, who } = rowShell(f.app, f.category, f.path, f.bytes, f.measured);
+    const t = tagFor(f); if (t) who.append(el("span", "tag" + (t[1] ? " " + t[1] : ""), t[0]));
+
+    const det = el("div", "detail");
+    const dl = el("dl");
+    const add = (k, v, code) => { if (!v) return; dl.append(el("dt", null, k)); const dd = el("dd"); if (code) dd.append(el("code", null, v)); else dd.textContent = v; dl.append(dd); };
+    const cmd = f.clean.startsWith("run: ") ? f.clean.slice(5) : "";
+    add("How to clean", cmd || f.clean, !!cmd);
+    if (f.closeFirst && f.closeFirst.length) add("Close first", f.closeFirst.join(", "));
+    if (f.admin) add("Needs", "an administrator terminal");
+    add("Afterwards", f.rebuilds);
+    add("Note", f.notes);
+    if (f.status && !f.status.startsWith("in use")) add("Status", f.status);
+    const actions = el("div", "actions");
+    actions.append(revealButton(f.path));
+    if (cmd) {
+      const b = el("button", "btn small", "Copy command");
+      b.onclick = () => { copy(cmd); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy command"), 1400); };
+      actions.append(b);
+    }
+    det.append(dl, actions);
+    row.append(det);
+    return row;
+  }
+
+  function plainRow(kind, path, size) {
+    const name = path.split("\\").filter(Boolean).pop() || path;
+    const { row } = rowShell(name, kind === "File" ? "large file" : "large folder", path, size, true);
+    const det = el("div", "detail");
+    const dl = el("dl"); dl.append(el("dt", null, "Before deleting"), el("dd", null, "Find out which program made it. Some apps (games, VMs, emulators) keep data you need here."));
+    const actions = el("div", "actions"); actions.append(revealButton(path));
+    det.append(dl, actions); row.append(det);
+    return row;
+  }
+
+  function revealButton(path) {
+    const b = el("button", "btn small", "Show in Explorer");
+    b.onclick = (e) => { e.stopPropagation(); api.reveal(path).catch((err) => showError(String(err))); };
+    return b;
+  }
+
+  function sizeBars() {
+    for (const list of document.querySelectorAll(".list")) {
+      const bars = [...list.querySelectorAll(".bar")];
+      const max = Math.max(1, ...bars.map((b) => +b.dataset.size));
+      for (const b of bars) b.style.width = "calc((100% - 32px) * " + (+b.dataset.size / max) + ")";
+    }
+  }
+
+  function copy(text) {
+    const t = el("textarea"); t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.append(t); t.select(); document.execCommand("copy"); t.remove();
+  }
+
+  // ---- design-time mock (used only when opened outside the app) ----
+  function mockApi() {
+    const GB = 1 << 30, MB = 1 << 20;
+    const f = (group, app, category, risk, path, b, extra) => Object.assign({ id: app, group, app, category, risk, path, bytes: b, measured: true, clean: "delete folder contents" }, extra || {});
+    const result = {
+      drive: { root: "C:\\", label: "Windows", fileSystem: "NTFS", total: 99.4 * GB, free: 23.9 * GB, system: true },
+      engine: "walk", elapsedMs: 21300, scannedFiles: 394833, scannedBytes: 97 * GB,
+      findings: [
+        f("dev", "Go", "build cache", "safe", "C:\\Users\\dev\\AppData\\Local\\go-build", 408 * MB, { clean: "run: go clean -cache", status: "leftover: Go now uses D:\\Tools\\gocache", rebuilds: "The next build is slower once." }),
+        f("browsers", "Firefox", "browser cache", "safe", "C:\\Users\\dev\\AppData\\Local\\Mozilla\\Firefox\\Profiles\\x.default\\cache2", 376 * MB, { closeFirst: ["firefox.exe"], rebuilds: "Sites load a bit slower the first time." }),
+        f("dev", "VS Code", "old extension versions", "safe", "C:\\Users\\dev\\.vscode\\extensions\\anthropic.claude-code-2.1.326-win32-x64", 373 * MB, { status: "old version, marked for removal by the editor", closeFirst: ["Code.exe"] }),
+        f("windows", "Windows", "temp files", "safe", "C:\\Users\\dev\\AppData\\Local\\Temp", 348 * MB, { notes: "Skip files changed in the last day and anything in use." }),
+        f("games", "Graphics drivers", "shader cache", "safe", "C:\\Users\\dev\\AppData\\Local\\NVIDIA\\DXCache", 294 * MB, { rebuilds: "Games may stutter briefly while shaders compile again." }),
+        f("games", "Unreal Engine games", "crash reports", "safe", "C:\\Users\\dev\\AppData\\Local\\VALORANT\\Saved\\Crashes", 761 * MB),
+        f("dev", "Playwright", "test browsers", "review", "C:\\Users\\dev\\AppData\\Local\\ms-playwright", 718 * MB, { rebuilds: "Tests stop working until you run npx playwright install." }),
+        f("other", "Downloads", "your files", "review", "C:\\Users\\dev\\Downloads", 1.4 * GB, { clean: "Sort by size and remove installers and archives you no longer need." }),
+        f("windows", "Windows", "system file", "system", "C:\\hiberfil.sys", 6.1 * GB, { admin: true, clean: "Admin terminal: powercfg /h off (turns off hibernate and Fast Startup)" }),
+        f("windows", "Windows", "component store", "system", "C:\\Windows\\WinSxS", 0, { admin: true, measured: false, clean: "run: Dism /Online /Cleanup-Image /StartComponentCleanup" }),
+      ],
+      unknown: [{ path: "C:\\Users\\dev\\AppData\\Local\\WWE 2K22", bytes: 8 * GB }, { path: "C:\\Users\\dev\\.docker\\cli-plugins", bytes: 683 * MB }],
+      files: [{ path: "C:\\Users\\dev\\Downloads\\android-studio-windows.exe", size: 1.4 * GB }],
+    };
+    return {
+      info: async () => ({ version: "dev", elevated: false, groups: ["dev", "games", "browsers", "windows", "other"],
+        drives: [result.drive, { root: "D:\\", label: "Data", fileSystem: "NTFS", total: 931 * GB, free: 512 * GB }] }),
+      analyze: async () => {
+        let n = 0;
+        const t = setInterval(() => window.tidy.on("progress", { phase: "Scanning files", files: (n += 23117) }), 200);
+        setTimeout(() => { clearInterval(t); window.tidy.on("result", result); }, 1600);
+      },
+      reveal: async () => {},
+      relaunchAdmin: async () => { throw new Error("Not available in preview"); },
+    };
+  }
+
+  init().catch((e) => showError(String(e)));
+})();
+</script>
+</body>
+</html>

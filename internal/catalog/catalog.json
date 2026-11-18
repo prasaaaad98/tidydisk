@@ -2,76 +2,76 @@
   "version": 1,
   "entries": [
     {
-      "id": "npm-cache", "app": "npm", "category": "package cache", "risk": "safe",
+      "id": "npm-cache", "group": "dev", "app": "npm", "category": "package cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\npm-cache", "%APPDATA%\\npm-cache"],
       "resolve": ["npm", "config", "get", "cache"],
       "clean": {"command": ["npm", "cache", "clean", "--force"]},
       "rebuilds": "Packages download again the next time they are installed."
     },
     {
-      "id": "pip-cache", "app": "pip", "category": "package cache", "risk": "safe",
+      "id": "pip-cache", "group": "dev", "app": "pip", "category": "package cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\pip\\cache"],
       "resolve": ["pip", "cache", "dir"],
       "clean": {"command": ["pip", "cache", "purge"]},
       "rebuilds": "Wheels download again when needed."
     },
     {
-      "id": "pnpm-store", "app": "pnpm", "category": "package cache", "risk": "safe",
+      "id": "pnpm-store", "group": "dev", "app": "pnpm", "category": "package cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\pnpm\\store", "%LOCALAPPDATA%\\pnpm-cache"],
       "resolve": ["pnpm", "store", "path"],
       "clean": {"command": ["pnpm", "store", "prune"]},
       "rebuilds": "Prune only removes packages no project references."
     },
     {
-      "id": "yarn-cache", "app": "Yarn", "category": "package cache", "risk": "safe",
+      "id": "yarn-cache", "group": "dev", "app": "Yarn", "category": "package cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\Yarn\\Cache"],
       "resolve": ["yarn", "cache", "dir"],
       "clean": {"command": ["yarn", "cache", "clean"]},
       "rebuilds": "Packages download again when needed."
     },
     {
-      "id": "go-build-cache", "app": "Go", "category": "build cache", "risk": "safe",
+      "id": "go-build-cache", "group": "dev", "app": "Go", "category": "build cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\go-build"],
       "resolve": ["go", "env", "GOCACHE"],
       "clean": {"command": ["go", "clean", "-cache"]},
       "rebuilds": "The next build is slower once."
     },
     {
-      "id": "nuget-packages", "app": ".NET / NuGet", "category": "package cache", "risk": "review",
+      "id": "nuget-packages", "group": "dev", "app": ".NET / NuGet", "category": "package cache", "risk": "review",
       "paths": ["%USERPROFILE%\\.nuget\\packages", "%LOCALAPPDATA%\\NuGet\\v3-cache"],
       "clean": {"command": ["dotnet", "nuget", "locals", "all", "--clear"]},
       "rebuilds": "Restored on the next build; offline builds will fail until then."
     },
     {
-      "id": "gradle-caches", "app": "Gradle", "category": "build cache", "risk": "review",
+      "id": "gradle-caches", "group": "dev", "app": "Gradle", "category": "build cache", "risk": "review",
       "paths": ["%USERPROFILE%\\.gradle\\caches"],
       "clean": {"deleteContents": true},
       "closeFirst": ["java.exe", "studio64.exe"],
       "rebuilds": "Dependencies download again; run gradle --stop first."
     },
     {
-      "id": "electron-cache", "app": "Electron", "category": "download cache", "risk": "safe",
+      "id": "electron-cache", "group": "dev", "app": "Electron", "category": "download cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\electron\\Cache", "%LOCALAPPDATA%\\electron-builder\\Cache"],
       "resolveEnv": "ELECTRON_CACHE",
       "clean": {"deleteContents": true},
       "rebuilds": "Electron binaries download again on the next install or package."
     },
     {
-      "id": "playwright-browsers", "app": "Playwright", "category": "test browsers", "risk": "review",
+      "id": "playwright-browsers", "group": "dev", "app": "Playwright", "category": "test browsers", "risk": "review",
       "paths": ["%LOCALAPPDATA%\\ms-playwright"],
       "resolveEnv": "PLAYWRIGHT_BROWSERS_PATH",
       "clean": {"deleteContents": true},
       "rebuilds": "Tests stop working until you run npx playwright install."
     },
     {
-      "id": "vscode-cpptools", "app": "VS Code C/C++", "category": "IntelliSense cache", "risk": "safe",
+      "id": "vscode-cpptools", "group": "dev", "app": "VS Code C/C++", "category": "IntelliSense cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\Microsoft\\vscode-cpptools"],
       "clean": {"deleteContents": true},
       "closeFirst": ["Code.exe"],
       "rebuilds": "Rebuilt when you open a C/C++ project."
     },
     {
-      "id": "vscode-caches", "app": "VS Code", "category": "app cache", "risk": "safe",
+      "id": "vscode-caches", "group": "dev", "app": "VS Code", "category": "app cache", "risk": "safe",
       "paths": ["%APPDATA%\\Code\\Cache", "%APPDATA%\\Code\\CachedData", "%APPDATA%\\Code\\Code Cache",
                 "%APPDATA%\\Code\\GPUCache", "%APPDATA%\\Code\\CachedExtensionVSIXs", "%APPDATA%\\Code\\Crashpad"],
       "clean": {"deleteContents": true},
@@ -79,7 +79,7 @@
       "rebuilds": "VS Code recreates these as it runs."
     },
     {
-      "id": "vscode-obsolete-extensions", "app": "VS Code", "category": "old extension versions", "risk": "safe",
+      "id": "vscode-obsolete-extensions", "group": "dev", "app": "VS Code", "category": "old extension versions", "risk": "safe",
       "paths": ["%USERPROFILE%\\.vscode\\extensions", "%USERPROFILE%\\.cursor\\extensions"],
       "detector": "vscode-obsolete",
       "clean": {"deleteContents": true},
@@ -87,53 +87,67 @@
       "rebuilds": "Nothing to rebuild; the editor already marked these versions for removal."
     },
     {
-      "id": "user-temp", "app": "Windows", "category": "temp files", "risk": "safe",
+      "id": "user-temp", "group": "windows", "app": "Windows", "category": "temp files", "risk": "safe",
       "paths": ["%TEMP%"],
       "clean": {"deleteContents": true},
       "notes": "Skip files changed in the last day and anything in use."
     },
     {
-      "id": "windows-temp", "app": "Windows", "category": "temp files", "risk": "safe",
+      "id": "windows-temp", "group": "windows", "app": "Windows", "category": "temp files", "risk": "safe",
       "paths": ["%SystemRoot%\\Temp"],
       "clean": {"deleteContents": true},
       "admin": true,
       "notes": "Skip files changed in the last day and anything in use."
     },
     {
-      "id": "crash-dumps", "app": "Windows", "category": "crash dumps", "risk": "safe",
+      "id": "crash-dumps", "group": "windows", "app": "Windows", "category": "crash dumps", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\CrashDumps", "%SystemRoot%\\Minidump", "%SystemRoot%\\LiveKernelReports"],
       "clean": {"deleteContents": true},
       "notes": "Keep them if you are reporting a crash to a developer."
     },
     {
-      "id": "game-crash-reports", "app": "Unreal Engine games", "category": "crash reports", "risk": "safe",
+      "id": "steam-web-cache", "group": "games", "app": "Steam", "category": "launcher cache", "risk": "safe",
+      "paths": ["%LOCALAPPDATA%\\Steam\\htmlcache", "%ProgramFiles(x86)%\\Steam\\appcache\\httpcache"],
+      "clean": {"deleteContents": true},
+      "closeFirst": ["steam.exe"],
+      "rebuilds": "Store and library pages load a bit slower once."
+    },
+    {
+      "id": "epic-web-cache", "group": "games", "app": "Epic Games Launcher", "category": "launcher cache", "risk": "safe",
+      "paths": ["%LOCALAPPDATA%\\EpicGamesLauncher\\Saved\\webcache*"],
+      "clean": {"deleteContents": true},
+      "closeFirst": ["EpicGamesLauncher.exe"],
+      "rebuilds": "Store pages load a bit slower once."
+    },
+    {
+      "id": "game-crash-reports", "group": "games", "app": "Unreal Engine games", "category": "crash reports", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\*\\Saved\\Crashes", "%LOCALAPPDATA%\\*\\Saved\\Logs"],
       "clean": {"deleteContents": true},
       "notes": "Close the game first. Keep them if a game's support team asked for them."
     },
     {
-      "id": "error-reports", "app": "Windows Error Reporting", "category": "crash reports", "risk": "safe",
+      "id": "error-reports", "group": "windows", "app": "Windows Error Reporting", "category": "crash reports", "risk": "safe",
       "paths": ["%ProgramData%\\Microsoft\\Windows\\WER\\ReportArchive", "%ProgramData%\\Microsoft\\Windows\\WER\\ReportQueue",
                 "%LOCALAPPDATA%\\Microsoft\\Windows\\WER\\ReportArchive"],
       "clean": {"deleteContents": true},
       "admin": true
     },
     {
-      "id": "shader-caches", "app": "Graphics drivers", "category": "shader cache", "risk": "safe",
+      "id": "shader-caches", "group": "games", "app": "Graphics drivers", "category": "shader cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\D3DSCache", "%LOCALAPPDATA%\\NVIDIA\\DXCache", "%LOCALAPPDATA%\\NVIDIA\\GLCache",
                 "%LOCALAPPDATA%\\AMD\\DxCache", "%LOCALAPPDATA%\\AMD\\DxcCache", "%LOCALAPPDATA%\\AMD\\GLCache"],
       "clean": {"deleteContents": true},
       "rebuilds": "Games may stutter briefly while shaders compile again."
     },
     {
-      "id": "nvidia-app-downloads", "app": "NVIDIA app", "category": "old driver installers", "risk": "review",
+      "id": "nvidia-app-downloads", "group": "games", "app": "NVIDIA app", "category": "old driver installers", "risk": "review",
       "paths": ["%ProgramData%\\NVIDIA Corporation\\NVIDIA app\\UpdateFramework\\ota-artifacts", "%SystemDrive%\\NVIDIA"],
       "clean": {"deleteContents": true},
       "closeFirst": ["NVIDIA app.exe"],
       "rebuilds": "The NVIDIA app downloads a driver again if it needs to reinstall one."
     },
     {
-      "id": "chrome-cache", "app": "Chrome", "category": "browser cache", "risk": "safe",
+      "id": "chrome-cache", "group": "browsers", "app": "Chrome", "category": "browser cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Cache", "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Code Cache",
                 "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\GPUCache"],
       "clean": {"deleteContents": true},
@@ -141,7 +155,7 @@
       "rebuilds": "Sites load a bit slower the first time. Logins and history are not touched."
     },
     {
-      "id": "edge-cache", "app": "Edge", "category": "browser cache", "risk": "safe",
+      "id": "edge-cache", "group": "browsers", "app": "Edge", "category": "browser cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Cache", "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Code Cache",
                 "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\GPUCache"],
       "clean": {"deleteContents": true},
@@ -149,44 +163,44 @@
       "rebuilds": "Sites load a bit slower the first time. Logins and history are not touched."
     },
     {
-      "id": "firefox-cache", "app": "Firefox", "category": "browser cache", "risk": "safe",
+      "id": "firefox-cache", "group": "browsers", "app": "Firefox", "category": "browser cache", "risk": "safe",
       "paths": ["%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\cache2"],
       "clean": {"deleteContents": true},
       "closeFirst": ["firefox.exe"],
       "rebuilds": "Sites load a bit slower the first time."
     },
     {
-      "id": "spotify-cache", "app": "Spotify", "category": "media cache", "risk": "review",
+      "id": "spotify-cache", "group": "other", "app": "Spotify", "category": "media cache", "risk": "review",
       "paths": ["%LOCALAPPDATA%\\Spotify\\Storage", "%LOCALAPPDATA%\\Packages\\SpotifyAB.SpotifyMusic_*\\LocalCache\\Spotify\\Data"],
       "clean": {"manual": "Spotify > Settings > Storage > Clear cache"},
       "notes": "Downloaded songs can live nearby; use Spotify's own button."
     },
     {
-      "id": "recycle-bin", "app": "Windows", "category": "deleted files", "risk": "review",
+      "id": "recycle-bin", "group": "windows", "app": "Windows", "category": "deleted files", "risk": "review",
       "paths": ["%SystemDrive%\\$Recycle.Bin"],
       "clean": {"command": ["powershell", "-NoProfile", "-Command", "Clear-RecycleBin -Force"]},
       "notes": "Emptying it is final."
     },
     {
-      "id": "downloads", "app": "You", "category": "personal files", "risk": "review",
+      "id": "downloads", "group": "other", "app": "Downloads", "category": "your files", "risk": "review",
       "paths": ["%USERPROFILE%\\Downloads"],
       "clean": {"manual": "Sort by size and remove installers and archives you no longer need."}
     },
     {
-      "id": "windows-update-downloads", "app": "Windows Update", "category": "update cache", "risk": "system",
+      "id": "windows-update-downloads", "group": "windows", "app": "Windows Update", "category": "update cache", "risk": "system",
       "paths": ["%SystemRoot%\\SoftwareDistribution\\Download"],
       "clean": {"command": ["cleanmgr", "/sageset:1"]},
       "admin": true,
       "notes": "Tick Windows Update Cleanup, then run cleanmgr /sagerun:1."
     },
     {
-      "id": "delivery-optimization", "app": "Windows Update", "category": "update cache", "risk": "system",
+      "id": "delivery-optimization", "group": "windows", "app": "Windows Update", "category": "update cache", "risk": "system",
       "paths": ["%SystemRoot%\\ServiceProfiles\\NetworkService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization\\Cache"],
       "clean": {"command": ["powershell", "-NoProfile", "-Command", "Delete-DeliveryOptimizationCache -Force"]},
       "admin": true
     },
     {
-      "id": "component-store", "app": "Windows", "category": "component store", "risk": "system",
+      "id": "component-store", "group": "windows", "app": "Windows", "category": "component store", "risk": "system",
       "paths": ["%SystemRoot%\\WinSxS"],
       "clean": {"command": ["Dism", "/Online", "/Cleanup-Image", "/StartComponentCleanup"]},
       "admin": true,
@@ -194,14 +208,14 @@
       "notes": "Never delete by hand. Folder scans overstate its size because most files are hard links into System32."
     },
     {
-      "id": "previous-windows", "app": "Windows", "category": "old Windows install", "risk": "system",
+      "id": "previous-windows", "group": "windows", "app": "Windows", "category": "old Windows install", "risk": "system",
       "paths": ["%SystemDrive%\\Windows.old"],
       "clean": {"manual": "Settings > System > Storage > Temporary files > Previous Windows installation(s)"},
       "admin": true,
       "notes": "Removing it means you can no longer roll back the last Windows upgrade."
     },
     {
-      "id": "hibernation-file", "app": "Windows", "category": "system file", "risk": "system",
+      "id": "hibernation-file", "group": "windows", "app": "Windows", "category": "system file", "risk": "system",
       "paths": ["%SystemDrive%\\hiberfil.sys"],
       "clean": {"manual": "Admin terminal: powercfg /h off (turns off hibernate and Fast Startup)"},
       "admin": true
